@@ -3,13 +3,20 @@ import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 
 import { ProgressBar } from "@/components/ProgressBar";
+import { ReturnButton } from "@/components/ReturnButton";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { Colors } from "@/constants/theme";
 import { lessons } from "@/data/lessons";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Student } from "@/models/Student";
 import { getCurrentStudent } from "@/services/authService";
 
 export default function ProgressScreen() {
+  const colorScheme = useColorScheme();
+
+  const colors = colorScheme === "dark" ? Colors.dark : Colors.light;
+
   const [student, setStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -61,14 +68,26 @@ export default function ProgressScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <ReturnButton />
         <ThemedText type="title">Meu progresso</ThemedText>
 
         <ThemedText style={styles.greeting}>
           Continue aprendendo, {student.name}!
         </ThemedText>
 
-        <ThemedView style={styles.card}>
+        <ThemedView
+          type="backgroundElement"
+          style={[
+            styles.card,
+            {
+              borderColor: colors.border,
+            },
+          ]}
+        >
           <ThemedText type="subtitle">Aulas</ThemedText>
 
           <ThemedText style={styles.number}>
@@ -78,7 +97,15 @@ export default function ProgressScreen() {
           <ProgressBar progress={lessonProgress} />
         </ThemedView>
 
-        <ThemedView style={styles.card}>
+        <ThemedView
+          type="backgroundElement"
+          style={[
+            styles.card,
+            {
+              borderColor: colors.border,
+            },
+          ]}
+        >
           <ThemedText type="subtitle">Lições</ThemedText>
 
           <ThemedText style={styles.number}>
@@ -86,7 +113,15 @@ export default function ProgressScreen() {
           </ThemedText>
         </ThemedView>
 
-        <ThemedView style={styles.card}>
+        <ThemedView
+          type="backgroundElement"
+          style={[
+            styles.card,
+            {
+              borderColor: colors.border,
+            },
+          ]}
+        >
           <ThemedText type="subtitle">Exercícios</ThemedText>
 
           <ThemedText style={styles.number}>
@@ -96,10 +131,27 @@ export default function ProgressScreen() {
           <ProgressBar progress={exerciseProgress} />
         </ThemedView>
 
-        <ThemedView style={styles.scoreCard}>
-          <ThemedText type="subtitle">Pontuação 🏆</ThemedText>
+        <ThemedView
+          style={[
+            styles.scoreCard,
+            {
+              backgroundColor: colorScheme === "dark" ? "#332B16" : "#FFF3CD",
 
-          <ThemedText style={styles.score}>{student.score} pontos</ThemedText>
+              borderColor: colorScheme === "dark" ? "#665722" : "#F0D98C",
+            },
+          ]}
+        >
+          <ThemedText type="subtitle" lightColor="#6B5700" darkColor="#FFE082">
+            Pontuação 🏆
+          </ThemedText>
+
+          <ThemedText
+            style={styles.score}
+            lightColor="#6B5700"
+            darkColor="#FFE082"
+          >
+            {student.score} pontos
+          </ThemedText>
         </ThemedView>
       </ScrollView>
     </ThemedView>
@@ -132,14 +184,14 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 12,
     gap: 10,
-    backgroundColor: "#F5F5F5",
+    borderWidth: 1,
   },
 
   scoreCard: {
     padding: 20,
     borderRadius: 12,
     gap: 10,
-    backgroundColor: "#FFF3CD",
+    borderWidth: 1,
   },
 
   number: {

@@ -1,5 +1,7 @@
 import { Pressable, StyleSheet } from "react-native";
 
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Lesson } from "@/models/Lesson";
 import { ThemedText } from "./themed-text";
 import { ThemedView } from "./themed-view";
@@ -17,18 +19,36 @@ export function LessonCard({
   completed,
   onPress,
 }: LessonCardProps) {
+  const colorScheme = useColorScheme();
+
+  const colors = colorScheme === "dark" ? Colors.dark : Colors.light;
+
   return (
     <Pressable
       onPress={onPress}
       disabled={!unlocked}
       style={({ pressed }) => [
         styles.card,
+        {
+          backgroundColor: colors.card,
+          borderColor: unlocked ? colors.tint : colors.border,
+        },
         !unlocked && styles.lockedCard,
         pressed && unlocked && styles.pressedCard,
       ]}
     >
-      <ThemedView style={styles.content}>
-        <ThemedView style={styles.textContainer}>
+      <ThemedView
+        style={styles.content}
+        type="backgroundElement"
+        lightColor={Colors.light.card}
+        darkColor={Colors.dark.card}
+      >
+        <ThemedView
+          style={styles.textContainer}
+          type="backgroundElement"
+          lightColor={Colors.light.card}
+          darkColor={Colors.dark.card}
+        >
           <ThemedText type="subtitle">
             {completed ? "✅" : unlocked ? "🔓" : "🔒"} {lesson.title}
           </ThemedText>
@@ -42,13 +62,27 @@ export function LessonCard({
           </ThemedText>
 
           {completed && (
-            <ThemedText style={styles.completedText}>
+            <ThemedText
+              style={[
+                styles.completedText,
+                {
+                  color: colors.tint,
+                },
+              ]}
+            >
               Aula concluída!
             </ThemedText>
           )}
 
           {!unlocked && (
-            <ThemedText style={styles.lockedText}>
+            <ThemedText
+              style={[
+                styles.lockedText,
+                {
+                  color: colors.muted,
+                },
+              ]}
+            >
               Complete a aula anterior para desbloquear.
             </ThemedText>
           )}
@@ -61,15 +95,12 @@ export function LessonCard({
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    borderColor: "#2E7D32",
     borderRadius: 12,
     padding: 16,
-    backgroundColor: "#FFFFFF",
   },
 
   lockedCard: {
     opacity: 0.5,
-    borderColor: "#999",
   },
 
   pressedCard: {
@@ -79,18 +110,11 @@ const styles = StyleSheet.create({
   content: {
     flexDirection: "row",
     gap: 14,
-    backgroundColor: "transparent",
-  },
-
-  icon: {
-    fontSize: 28,
-    marginTop: 2,
   },
 
   textContainer: {
     flex: 1,
     gap: 6,
-    backgroundColor: "transparent",
   },
 
   description: {
@@ -104,13 +128,11 @@ const styles = StyleSheet.create({
   },
 
   completedText: {
-    color: "#2E7D32",
     fontWeight: "bold",
     marginTop: 4,
   },
 
   lockedText: {
-    color: "#777",
     fontSize: 13,
     marginTop: 4,
   },

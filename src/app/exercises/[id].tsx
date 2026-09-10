@@ -3,13 +3,19 @@ import { useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet } from "react-native";
 
 import { ExerciseCard } from "@/components/ExerciseCard";
+import { ReturnButton } from "@/components/ReturnButton";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { Colors } from "@/constants/theme";
 import { lessons } from "@/data/lessons";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { completeExercise, completeLesson } from "@/services/progressService";
 
 export default function ExercisesScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+
+  const colors = colorScheme === "dark" ? Colors.dark : Colors.light;
 
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -26,8 +32,22 @@ export default function ExercisesScreen() {
       <ThemedView style={styles.container}>
         <ThemedText type="title">Aula não encontrada</ThemedText>
 
-        <Pressable style={styles.button} onPress={() => router.back()}>
-          <ThemedText style={styles.buttonText}>Voltar</ThemedText>
+        <Pressable
+          style={[
+            styles.button,
+            {
+              backgroundColor: colors.tint,
+            },
+          ]}
+          onPress={() => router.back()}
+        >
+          <ThemedText
+            style={styles.buttonText}
+            lightColor="#FFFFFF"
+            darkColor="#FFFFFF"
+          >
+            Voltar
+          </ThemedText>
         </Pressable>
       </ThemedView>
     );
@@ -102,10 +122,19 @@ export default function ExercisesScreen() {
           </ThemedText>
 
           <Pressable
-            style={styles.button}
+            style={[
+              styles.button,
+              {
+                backgroundColor: colors.tint,
+              },
+            ]}
             onPress={() => router.replace("/student/lessons")}
           >
-            <ThemedText style={styles.buttonText}>
+            <ThemedText
+              style={styles.buttonText}
+              lightColor="#FFFFFF"
+              darkColor="#FFFFFF"
+            >
               Voltar para as aulas
             </ThemedText>
           </Pressable>
@@ -114,9 +143,15 @@ export default function ExercisesScreen() {
     );
   }
 
+  const isButtonDisabled = selectedAnswer === null;
+
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <ReturnButton />
         <ThemedText type="title">Exercícios</ThemedText>
 
         <ThemedText style={styles.lessonTitle}>{lesson.title}</ThemedText>
@@ -135,12 +170,22 @@ export default function ExercisesScreen() {
         <Pressable
           style={[
             styles.button,
-            selectedAnswer === null && styles.disabledButton,
+            {
+              backgroundColor: isButtonDisabled
+                ? colorScheme === "dark"
+                  ? "#333333"
+                  : "#BDBDBD"
+                : colors.tint,
+            },
           ]}
           onPress={answered ? handleNext : handleConfirmAnswer}
-          disabled={selectedAnswer === null}
+          disabled={isButtonDisabled}
         >
-          <ThemedText style={styles.buttonText}>
+          <ThemedText
+            style={styles.buttonText}
+            lightColor="#FFFFFF"
+            darkColor="#FFFFFF"
+          >
             {answered
               ? currentExerciseIndex === lesson.exercises.length - 1
                 ? "Finalizar aula"
@@ -175,22 +220,18 @@ const styles = StyleSheet.create({
   },
 
   button: {
-    height: 52,
+    minHeight: 52,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#2E7D32",
     marginTop: 8,
-  },
-
-  disabledButton: {
-    opacity: 0.5,
   },
 
   buttonText: {
     padding: 10,
     color: "#FFFFFF",
     fontWeight: "bold",
+    textAlign: "center",
   },
 
   result: {

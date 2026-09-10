@@ -1,5 +1,7 @@
 import { Pressable, StyleSheet } from "react-native";
 
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Exercise } from "@/models/Exercise";
 import { ThemedText } from "./themed-text";
 import { ThemedView } from "./themed-view";
@@ -17,6 +19,10 @@ export function ExerciseCard({
   answered,
   onSelectAnswer,
 }: ExerciseCardProps) {
+  const colorScheme = useColorScheme();
+
+  const colors = colorScheme === "dark" ? Colors.dark : Colors.light;
+
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="subtitle" style={styles.question}>
@@ -26,6 +32,7 @@ export function ExerciseCard({
       <ThemedView style={styles.options}>
         {exercise.options.map((option, index) => {
           const isSelected = selectedAnswer === index;
+
           const isCorrect = exercise.correctAnswer === index;
 
           return (
@@ -35,12 +42,35 @@ export function ExerciseCard({
               onPress={() => onSelectAnswer(index)}
               style={[
                 styles.option,
-
-                isSelected && !answered && styles.selectedOption,
-
-                answered && isCorrect && styles.correctOption,
-
-                answered && isSelected && !isCorrect && styles.wrongOption,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                },
+                isSelected &&
+                  !answered && {
+                    backgroundColor:
+                      colorScheme === "dark"
+                        ? "rgba(33, 150, 243, 0.2)"
+                        : "rgba(33, 150, 243, 0.25)",
+                    borderColor: "#2196F3",
+                  },
+                answered &&
+                  isCorrect && {
+                    backgroundColor:
+                      colorScheme === "dark"
+                        ? "rgba(46, 125, 50, 0.25)"
+                        : "rgba(46, 125, 50, 0.2)",
+                    borderColor: "#2E7D32",
+                  },
+                answered &&
+                  isSelected &&
+                  !isCorrect && {
+                    backgroundColor:
+                      colorScheme === "dark"
+                        ? "rgba(198, 40, 40, 0.25)"
+                        : "rgba(198, 40, 40, 0.2)",
+                    borderColor: "#C62828",
+                  },
               ]}
             >
               <ThemedText style={styles.optionText}>{option}</ThemedText>
@@ -50,7 +80,15 @@ export function ExerciseCard({
       </ThemedView>
 
       {answered && (
-        <ThemedView style={styles.feedback}>
+        <ThemedView
+          style={[
+            styles.feedback,
+            {
+              backgroundColor: colorScheme === "dark" ? "#242424" : "#EEEEEE",
+              borderColor: colors.border,
+            },
+          ]}
+        >
           <ThemedText type="subtitle">
             {selectedAnswer === exercise.correctAnswer
               ? "🎉 Muito bem!"
@@ -82,39 +120,19 @@ const styles = StyleSheet.create({
   option: {
     minHeight: 52,
     borderWidth: 1,
-    borderColor: "#999",
     borderRadius: 10,
     padding: 14,
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-  },
-
-  selectedOption: {
-    backgroundColor: "rgba(33, 150, 243, 0.25)",
-    borderColor: "#2196F3",
-    borderWidth: 2,
-  },
-
-  correctOption: {
-    backgroundColor: "rgba(46, 125, 50, 0.2)",
-    borderColor: "#2E7D32",
-    borderWidth: 2,
-  },
-
-  wrongOption: {
-    backgroundColor: "rgba(198, 40, 40, 0.2)",
-    borderColor: "#C62828",
-    borderWidth: 2,
   },
 
   optionText: {
-    color: "#000000",
+    fontSize: 16,
   },
 
   feedback: {
     gap: 8,
     padding: 16,
     borderRadius: 10,
-    backgroundColor: "#EEEEEE",
+    borderWidth: 1,
   },
 });

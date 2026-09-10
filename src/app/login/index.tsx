@@ -12,7 +12,7 @@ import {
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { login, logout } from "@/services/authService";
+import { login } from "@/services/authService";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -76,14 +76,6 @@ export default function LoginScreen() {
             <ThemedText style={styles.buttonText}>
               {loading ? "Entrando..." : "Entrar"}
             </ThemedText>
-          </Pressable>
-          <Pressable
-            onPress={async () => {
-              await logout();
-              router.replace("/login");
-            }}
-          >
-            <ThemedText>Log-out Temporário</ThemedText>
           </Pressable>
         </ThemedView>
       </Pressable>

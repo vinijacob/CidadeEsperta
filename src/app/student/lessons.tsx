@@ -3,18 +3,25 @@ import { useCallback, useState } from "react";
 import { Pressable, ScrollView, StyleSheet } from "react-native";
 
 import { LessonCard } from "@/components/LessonCard";
+import { ProfileButton } from "@/components/ProfileButton";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { DEV_UNLOCK_ALL } from "@/config/appConfig";
+import { Colors } from "@/constants/theme";
 import { lessons } from "@/data/lessons";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Student } from "@/models/Student";
 import { getCurrentStudent } from "@/services/authService";
 import { isLessonUnlocked } from "@/services/progressService";
 
 export default function LessonsScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+
+  const colors = colorScheme === "dark" ? Colors.dark : Colors.light;
 
   const [student, setStudent] = useState<Student | null>(null);
+
   const [loading, setLoading] = useState(true);
 
   async function loadStudent() {
@@ -50,8 +57,15 @@ export default function LessonsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <ThemedText type="title">Aulas</ThemedText>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <ThemedView style={styles.header}>
+          <ThemedText type="title">Aulas</ThemedText>
+
+          <ProfileButton />
+        </ThemedView>
 
         <ThemedText style={styles.subtitle}>
           Aprenda programação passo a passo construindo uma cidade inteligente.
@@ -78,10 +92,19 @@ export default function LessonsScreen() {
         })}
 
         <Pressable
-          style={styles.progressButton}
+          style={[
+            styles.progressButton,
+            {
+              borderColor: colors.tint,
+            },
+          ]}
           onPress={() => router.push("/student/progress")}
         >
-          <ThemedText style={styles.progressButtonText}>
+          <ThemedText
+            style={styles.progressButtonText}
+            lightColor={Colors.light.tint}
+            darkColor={Colors.dark.tint}
+          >
             Ver meu progresso
           </ThemedText>
         </Pressable>
@@ -108,6 +131,13 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
 
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "transparent",
+  },
+
   subtitle: {
     marginBottom: 8,
   },
@@ -116,14 +146,12 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#2E7D32",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,
   },
 
   progressButtonText: {
-    color: "#2E7D32",
     fontWeight: "bold",
   },
 });

@@ -4,10 +4,15 @@ import { Pressable, StyleSheet } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { getCurrentStudent } from "@/services/authService";
 
 export default function StudentHomeScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+
+  const colors = colorScheme === "dark" ? Colors.dark : Colors.light;
 
   const [studentName, setStudentName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -54,17 +59,37 @@ export default function StudentHomeScreen() {
       </ThemedText>
 
       <Pressable
-        style={styles.primaryButton}
+        style={[
+          styles.primaryButton,
+          {
+            backgroundColor: colors.tint,
+          },
+        ]}
         onPress={() => router.push("/student/lessons")}
       >
-        <ThemedText style={styles.buttonText}>Começar a aprender</ThemedText>
+        <ThemedText
+          style={styles.buttonText}
+          lightColor="#FFFFFF"
+          darkColor="#FFFFFF"
+        >
+          Começar a aprender
+        </ThemedText>
       </Pressable>
 
       <Pressable
-        style={styles.secondaryButton}
+        style={[
+          styles.secondaryButton,
+          {
+            borderColor: colors.tint,
+          },
+        ]}
         onPress={() => router.push("/student/progress")}
       >
-        <ThemedText style={styles.secondaryButtonText}>
+        <ThemedText
+          style={styles.secondaryButtonText}
+          lightColor={Colors.light.tint}
+          darkColor={Colors.dark.tint}
+        >
           Meu progresso
         </ThemedText>
       </Pressable>
@@ -95,11 +120,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#2E7D32",
   },
 
   buttonText: {
-    color: "#fff",
+    color: "#FFFFFF",
     fontWeight: "bold",
   },
 
@@ -109,11 +133,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#2E7D32",
   },
 
   secondaryButtonText: {
-    color: "#2E7D32",
     fontWeight: "bold",
   },
 });

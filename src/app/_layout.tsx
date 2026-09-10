@@ -50,6 +50,13 @@ export default function RootLayout() {
         />
 
         <Stack.Screen
+          name="student/profile"
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        <Stack.Screen
           name="lesson/[id]"
           options={{
             headerShown: false,

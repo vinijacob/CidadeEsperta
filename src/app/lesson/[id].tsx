@@ -2,12 +2,19 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet } from "react-native";
 
+import { ReturnButton } from "@/components/ReturnButton";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { Colors } from "@/constants/theme";
 import { lessons } from "@/data/lessons";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function LessonScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+
+  const colors = colorScheme === "dark" ? Colors.dark : Colors.light;
+
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const lesson = lessons.find((item) => item.id === id);
@@ -19,8 +26,22 @@ export default function LessonScreen() {
       <ThemedView style={styles.container}>
         <ThemedText type="title">Aula não encontrada</ThemedText>
 
-        <Pressable style={styles.button} onPress={() => router.back()}>
-          <ThemedText style={styles.buttonText}>Voltar</ThemedText>
+        <Pressable
+          style={[
+            styles.button,
+            {
+              backgroundColor: colors.tint,
+            },
+          ]}
+          onPress={() => router.back()}
+        >
+          <ThemedText
+            style={styles.buttonText}
+            lightColor="#FFFFFF"
+            darkColor="#FFFFFF"
+          >
+            Voltar
+          </ThemedText>
         </Pressable>
       </ThemedView>
     );
@@ -33,22 +54,41 @@ export default function LessonScreen() {
   function handleNext() {
     if (!isLastTopic) {
       setCurrentTopicIndex((currentIndex) => currentIndex + 1);
+
       return;
     }
 
     router.push(`/exercises/${lesson?.id}`);
   }
 
+  function handleBack() {
+    if (currentTopicIndex !== 0) {
+      setCurrentTopicIndex((currentIndex) => currentIndex - 1);
+    }
+  }
+
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <ReturnButton />
         <ThemedText style={styles.lessonTitle}>{lesson.title}</ThemedText>
 
         <ThemedText style={styles.progress}>
           Lição {currentTopicIndex + 1} de {lesson.topics.length}
         </ThemedText>
 
-        <ThemedView style={styles.card}>
+        <ThemedView
+          type="backgroundElement"
+          style={[
+            styles.card,
+            {
+              borderColor: colors.border,
+            },
+          ]}
+        >
           <ThemedText type="subtitle" style={styles.topicTitle}>
             {currentTopic.title}
           </ThemedText>
@@ -58,23 +98,64 @@ export default function LessonScreen() {
           </ThemedText>
 
           {currentTopic.pythonExample && (
-            <ThemedView style={styles.codeContainer}>
-              <ThemedText style={styles.codeTitle}>
+            <ThemedView
+              style={[
+                styles.codeContainer,
+                {
+                  backgroundColor:
+                    colorScheme === "dark" ? "#0D1117" : "#222222",
+                },
+              ]}
+            >
+              <ThemedText
+                style={styles.codeTitle}
+                lightColor="#FFFFFF"
+                darkColor="#FFFFFF"
+              >
                 Exemplo em Python 🐍
               </ThemedText>
 
-              <ThemedText style={styles.code}>
+              <ThemedText
+                style={styles.code}
+                lightColor="#FFFFFF"
+                darkColor="#FFFFFF"
+              >
                 {currentTopic.pythonExample}
               </ThemedText>
             </ThemedView>
           )}
         </ThemedView>
 
-        <Pressable style={styles.button} onPress={handleNext}>
-          <ThemedText style={styles.buttonText}>
-            {isLastTopic ? "Ir para os exercícios" : "Próxima lição"}
-          </ThemedText>
-        </Pressable>
+        <ThemedView style={styles.actionButtons}>
+          <Pressable
+            style={[
+              styles.button,
+              {
+                backgroundColor: "#7A0A17",
+              },
+            ]}
+            onPress={handleBack}
+          >
+            <ThemedText style={styles.buttonText}>Lição Anterior</ThemedText>
+          </Pressable>
+          <Pressable
+            style={[
+              styles.button,
+              {
+                backgroundColor: colors.tint,
+              },
+            ]}
+            onPress={handleNext}
+          >
+            <ThemedText
+              style={styles.buttonText}
+              lightColor="#FFFFFF"
+              darkColor="#FFFFFF"
+            >
+              {isLastTopic ? "Ir para os exercícios" : "Próxima lição"}
+            </ThemedText>
+          </Pressable>
+        </ThemedView>
       </ScrollView>
     </ThemedView>
   );
@@ -105,7 +186,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     gap: 16,
-    backgroundColor: "#F5F5F5",
+    borderWidth: 1,
   },
 
   topicTitle: {
@@ -121,7 +202,6 @@ const styles = StyleSheet.create({
   codeContainer: {
     borderRadius: 10,
     padding: 16,
-    backgroundColor: "#222",
     gap: 10,
   },
 
@@ -136,13 +216,20 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
+  actionButtons: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    gap: 10,
+  },
+
   button: {
     height: 52,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#2E7D32",
     marginTop: 8,
+    padding: 15,
   },
 
   buttonText: {

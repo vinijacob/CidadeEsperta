@@ -7,9 +7,9 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  TextInput,
 } from "react-native";
 
+import { Form, FormField } from "@/components/Form";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { login } from "@/services/authService";
@@ -18,14 +18,44 @@ export default function LoginScreen() {
   const router = useRouter();
 
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   const [loading, setLoading] = useState(false);
 
-  async function handleLogin() {
-    if (!name.trim()) {
-      Alert.alert("Atenção", "Digite seu nome para continuar.");
-      return;
-    }
+  const fields: FormField[] = [
+    {
+      label: "Qual é o seu nome?",
+      placeholder: "Digite seu nome",
+      type: "text",
+      value: name,
+      onChangeText: setName,
+    },
+    {
+      label: "Qual é o seu e-mail?",
+      placeholder: "Digite seu e-mail",
+      type: "email",
+      value: email,
+      onChangeText: setEmail,
+    },
+    {
+      label: "Crie uma senha",
+      placeholder: "Digite sua senha",
+      type: "password",
+      value: password,
+      onChangeText: setPassword,
+    },
+    {
+      label: "Repita sua senha",
+      placeholder: "Digite sua senha novamente",
+      type: "confirmPassword",
+      value: confirmPassword,
+      onChangeText: setConfirmPassword,
+    },
+  ];
 
+  async function handleLogin() {
     try {
       setLoading(true);
 
@@ -54,29 +84,12 @@ export default function LoginScreen() {
             Aprenda programação construindo uma cidade inteligente!
           </ThemedText>
 
-          <ThemedText style={styles.label}>Qual é o seu nome?</ThemedText>
-
-          <TextInput
-            editable={!loading}
-            value={name}
-            onChangeText={setName}
-            style={styles.input}
-            placeholder="Digite seu nome"
-            placeholderTextColor="grey"
-            autoCapitalize="words"
-            returnKeyType="done"
-            onSubmitEditing={Keyboard.dismiss}
+          <Form
+            fields={fields}
+            onSubmit={handleLogin}
+            submitText="Entrar"
+            loading={loading}
           />
-
-          <Pressable
-            style={styles.button}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            <ThemedText style={styles.buttonText}>
-              {loading ? "Entrando..." : "Entrar"}
-            </ThemedText>
-          </Pressable>
         </ThemedView>
       </Pressable>
     </KeyboardAvoidingView>
@@ -103,33 +116,5 @@ const styles = StyleSheet.create({
   subtitle: {
     textAlign: "center",
     marginBottom: 24,
-  },
-
-  label: {
-    fontWeight: "600",
-  },
-
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: "#999",
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    backgroundColor: "#fff",
-    color: "#000",
-  },
-
-  button: {
-    height: 50,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#2E7D32",
-    marginTop: 8,
-  },
-
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
   },
 });

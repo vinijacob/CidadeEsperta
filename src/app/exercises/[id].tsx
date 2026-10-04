@@ -1,258 +1,183 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet } from "react-native";
+import * as Haptics from "expo-haptics";
+import { StyleSheet } from "react-native";
 
-import { ExerciseCard } from "@/components/ExerciseCard";
+import { Button } from "@/components/Button";
+import { ExercisePlayer } from "@/components/ExercisePlayer";
+import { ProgressBar } from "@/components/ProgressBar";
 import { ReturnButton } from "@/components/ReturnButton";
+import { Screen } from "@/components/Screen";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { Colors } from "@/constants/theme";
+import { getColors } from "@/constants/theme";
+import { isAnswerCorrect } from "@/rules/exerciseRules";
 import { lessons } from "@/data/lessons";
+import { Answer } from "@/models/Exercise";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { completeExercise, completeLesson } from "@/services/progressService";
 
+const POINTS = 10;
+
 export default function ExercisesScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-
-  const colors = colorScheme === "dark" ? Colors.dark : Colors.light;
+  const colors = getColors(useColorScheme());
 
   const { id } = useLocalSearchParams<{ id: string }>();
-
   const lesson = lessons.find((item) => item.id === id);
 
-  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  // Fila de exercícios: os erros voltam ao final para serem revisados.
+  const [queue, setQueue] = useState<number[]>(
+    () => lesson?.exercises.map((_, i) => i) ?? [],
+  );
+  const [position, setPosition] = useState(0);
+  const [selected, setSelected] = useState<Answer>(null);
   const [answered, setAnswered] = useState(false);
-  const [score, setScore] = useState(0);
+  const [correctFirstTry, setCorrectFirstTry] = useState(0);
+  const [retried, setRetried] = useState<number[]>([]);
   const [finished, setFinished] = useState(false);
 
   if (!lesson) {
     return (
-      <ThemedView style={styles.container}>
+      <Screen>
+        <ReturnButton />
         <ThemedText type="title">Aula não encontrada</ThemedText>
-
-        <Pressable
-          style={[
-            styles.button,
-            {
-              backgroundColor: colors.tint,
-            },
-          ]}
-          onPress={() => router.back()}
-        >
-          <ThemedText
-            style={styles.buttonText}
-            lightColor="#FFFFFF"
-            darkColor="#FFFFFF"
-          >
-            Voltar
-          </ThemedText>
-        </Pressable>
-      </ThemedView>
+      </Screen>
     );
   }
 
-  const currentExercise = lesson.exercises[currentExerciseIndex];
+  const total = lesson.exercises.length;
+  const exerciseIndex = queue[position];
+  const exercise = lesson.exercises[exerciseIndex];
+  const isReview = retried.includes(exerciseIndex);
+  const isLast = position === queue.length - 1;
 
-  function handleAnswer(answerIndex: number) {
-    if (answered) {
-      return;
-    }
-
-    setSelectedAnswer(answerIndex);
-  }
-
-  async function handleConfirmAnswer() {
-    if (selectedAnswer === null) {
-      Alert.alert("Atenção", "Escolha uma resposta antes de confirmar.");
-
-      return;
-    }
-
-    if (answered) {
+  async function handleConfirm() {
+    if (selected === null || answered) {
       return;
     }
 
     setAnswered(true);
 
-    const isCorrect = selectedAnswer === currentExercise.correctAnswer;
+    Haptics.notificationAsync(
+      isAnswerCorrect(exercise, selected)
+        ? Haptics.NotificationFeedbackType.Success
+        : Haptics.NotificationFeedbackType.Error,
+    ).catch(() => {});
 
-    if (isCorrect) {
-      setScore((currentScore) => currentScore + 10);
+    if (isAnswerCorrect(exercise, selected)) {
+      if (!isReview) {
+        setCorrectFirstTry((count) => count + 1);
+      }
 
-      await completeExercise(currentExercise.id, 10);
+      await completeExercise(exercise.id, isReview ? 0 : POINTS, true);
     } else {
-      await completeExercise(currentExercise.id, 0);
+      // Erros voltam ao final da fila (uma vez) para revisão.
+      if (!isReview) {
+        setQueue((current) => [...current, exerciseIndex]);
+        setRetried((current) => [...current, exerciseIndex]);
+      }
+
+      await completeExercise(exercise.id, 0, false);
     }
   }
 
   async function handleNext() {
-    const isLastExercise =
-      currentExerciseIndex === lesson!.exercises.length - 1;
+    const wrongNow = !isAnswerCorrect(exercise, selected) && !isReview;
+    const nothingLeft = isLast && !wrongNow;
 
-    if (isLastExercise) {
+    if (nothingLeft) {
       await completeLesson(lesson!.id);
-
       setFinished(true);
-
       return;
     }
 
-    setCurrentExerciseIndex((currentIndex) => currentIndex + 1);
-
-    setSelectedAnswer(null);
+    setPosition(position + 1);
+    setSelected(null);
     setAnswered(false);
   }
 
   if (finished) {
+    const stars =
+      correctFirstTry === total ? "⭐⭐⭐" : correctFirstTry >= total / 2 ? "⭐⭐" : "⭐";
+
     return (
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.result}>
-          <ThemedText type="title" style={styles.resultTitle}>
-            Aula concluída! 🎉
-          </ThemedText>
+      <Screen scroll={false} contentStyle={styles.result}>
+        <ThemedText style={styles.stars}>{stars}</ThemedText>
+        <ThemedText type="title" style={styles.center}>
+          Aula concluída! 🎉
+        </ThemedText>
+        <ThemedText style={[styles.center, { color: colors.muted }]}>
+          Você acertou {correctFirstTry} de {total} de primeira.
+        </ThemedText>
+        <ThemedText style={styles.score}>
+          +{correctFirstTry * POINTS} pontos
+        </ThemedText>
 
-          <ThemedText style={styles.resultText}>
-            Você terminou os exercícios.
-          </ThemedText>
-
-          <ThemedText style={styles.score}>
-            Pontuação: {score} pontos
-          </ThemedText>
-
-          <Pressable
-            style={[
-              styles.button,
-              {
-                backgroundColor: colors.tint,
-              },
-            ]}
+        <ThemedView style={styles.actions}>
+          <Button
+            title="Voltar para as aulas"
             onPress={() => router.replace("/student/lessons")}
-          >
-            <ThemedText
-              style={styles.buttonText}
-              lightColor="#FFFFFF"
-              darkColor="#FFFFFF"
-            >
-              Voltar para as aulas
-            </ThemedText>
-          </Pressable>
+          />
+          <Button
+            variant="secondary"
+            title="Refazer lição"
+            onPress={() => router.replace(`/lesson/${lesson.id}`)}
+          />
         </ThemedView>
-      </ThemedView>
+      </Screen>
     );
   }
 
-  const isButtonDisabled = selectedAnswer === null;
-
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <ReturnButton />
-        <ThemedText type="title">Exercícios</ThemedText>
+    <Screen>
+      <ReturnButton />
 
-        <ThemedText style={styles.lessonTitle}>{lesson.title}</ThemedText>
+      <ThemedText type="title">Exercícios</ThemedText>
+      <ThemedText style={styles.lessonTitle}>{lesson.title}</ThemedText>
 
-        <ThemedText style={styles.progress}>
-          Exercício {currentExerciseIndex + 1} de {lesson.exercises.length}
+      <ThemedView style={styles.progressRow}>
+        <ThemedText type="small" style={{ color: colors.muted }}>
+          {isReview ? "🔁 Revisão • " : ""}
+          Exercício {position + 1} de {queue.length}
         </ThemedText>
+        <ProgressBar progress={position / queue.length} />
+      </ThemedView>
 
-        <ExerciseCard
-          exercise={currentExercise}
-          selectedAnswer={selectedAnswer}
-          answered={answered}
-          onSelectAnswer={handleAnswer}
-        />
+      <ExercisePlayer
+        key={position}
+        exercise={exercise}
+        answer={selected}
+        answered={answered}
+        onChange={setSelected}
+      />
 
-        <Pressable
-          style={[
-            styles.button,
-            {
-              backgroundColor: isButtonDisabled
-                ? colorScheme === "dark"
-                  ? "#333333"
-                  : "#BDBDBD"
-                : colors.tint,
-            },
-          ]}
-          onPress={answered ? handleNext : handleConfirmAnswer}
-          disabled={isButtonDisabled}
-        >
-          <ThemedText
-            style={styles.buttonText}
-            lightColor="#FFFFFF"
-            darkColor="#FFFFFF"
-          >
-            {answered
-              ? currentExerciseIndex === lesson.exercises.length - 1
-                ? "Finalizar aula"
-                : "Próximo exercício"
-              : "Confirmar resposta"}
-          </ThemedText>
-        </Pressable>
-      </ScrollView>
-    </ThemedView>
+      <Button
+        title={
+          answered
+            ? isLast && isAnswerCorrect(exercise, selected)
+              ? "Finalizar aula"
+              : "Próximo exercício"
+            : "Confirmar resposta"
+        }
+        disabled={selected === null}
+        onPress={answered ? handleNext : handleConfirm}
+      />
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
-  content: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 20,
-    gap: 16,
-  },
-
-  lessonTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-
-  progress: {
-    opacity: 0.7,
-  },
-
-  button: {
-    minHeight: 52,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
-  },
-
-  buttonText: {
-    padding: 10,
-    color: "#FFFFFF",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-
-  result: {
-    flex: 1,
-    padding: 24,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 18,
+  lessonTitle: { fontSize: 18, fontWeight: "600" },
+  progressRow: { gap: 8, backgroundColor: "transparent" },
+  result: { justifyContent: "center", alignItems: "center", gap: 14 },
+  center: { textAlign: "center" },
+  stars: { fontSize: 56, lineHeight: 70 },
+  score: { fontSize: 24, fontWeight: "bold" },
+  actions: {
+    alignSelf: "stretch",
+    gap: 12,
+    marginTop: 12,
     backgroundColor: "transparent",
-  },
-
-  resultTitle: {
-    textAlign: "center",
-  },
-
-  resultText: {
-    textAlign: "center",
-  },
-
-  score: {
-    fontSize: 24,
-    fontWeight: "bold",
   },
 });

@@ -1,75 +1,43 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useColorScheme } from "react-native";
+import { StatusBar } from "expo-status-bar";
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const dark = useColorScheme() === "dark";
+  const colors = dark ? Colors.dark : Colors.light;
+
+  const base = dark ? DarkTheme : DefaultTheme;
+
+  const theme = {
+    ...base,
+    colors: {
+      ...base.colors,
+      primary: colors.tint,
+      background: colors.background,
+      card: colors.card,
+      text: colors.text,
+      border: colors.border,
+    },
+  };
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={theme}>
       <AnimatedSplashOverlay />
+      <StatusBar style={dark ? "light" : "dark"} />
 
-      <Stack>
-        <Stack.Screen
-          name="index"
-          options={{
-            headerShown: false,
-          }}
-        />
-
-        <Stack.Screen
-          name="login/index"
-          options={{
-            headerShown: false,
-          }}
-        />
-
-        <Stack.Screen
-          name="student/index"
-          options={{
-            headerShown: false,
-          }}
-        />
-
-        <Stack.Screen
-          name="student/lessons"
-          options={{
-            headerShown: false,
-          }}
-        />
-
-        <Stack.Screen
-          name="student/progress"
-          options={{
-            headerShown: false,
-          }}
-        />
-
-        <Stack.Screen
-          name="student/profile"
-          options={{
-            headerShown: false,
-          }}
-        />
-
-        <Stack.Screen
-          name="lesson/[id]"
-          options={{
-            headerShown: false,
-          }}
-        />
-
-        <Stack.Screen
-          name="exercises/[id]"
-          options={{
-            headerShown: false,
-          }}
-        />
-      </Stack>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: "slide_from_right",
+          contentStyle: { backgroundColor: colors.background },
+        }}
+      />
     </ThemeProvider>
   );
 }

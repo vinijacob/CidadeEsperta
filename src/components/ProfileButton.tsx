@@ -1,17 +1,25 @@
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet } from "react-native";
 
+import { getColors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ThemedText } from "./themed-text";
 
-export function ProfileButton() {
+export function ProfileButton({ avatar = "🙂" }: { avatar?: string }) {
   const router = useRouter();
+  const colors = getColors(useColorScheme());
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+      accessibilityLabel="Abrir perfil"
+      style={({ pressed }) => [
+        styles.button,
+        { backgroundColor: colors.tintSoft, borderColor: colors.tint },
+        pressed && styles.pressed,
+      ]}
       onPress={() => router.push("/student/profile")}
     >
-      <ThemedText style={styles.icon}>👤</ThemedText>
+      <ThemedText style={styles.icon}>{avatar}</ThemedText>
     </Pressable>
   );
 }
@@ -21,16 +29,10 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
+    borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#2E7D32",
   },
-
-  pressed: {
-    opacity: 0.7,
-  },
-
-  icon: {
-    fontSize: 22,
-  },
+  pressed: { opacity: 0.7 },
+  icon: { fontSize: 22, lineHeight: 28 },
 });

@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Alert, Pressable, StyleSheet, TextInput, View } from "react-native";
 
+import { Button } from "@/components/Button";
 import { ThemedText } from "@/components/themed-text";
+import { getColors, Radius } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export type FormFieldType = "text" | "email" | "password" | "confirmPassword";
 
@@ -21,9 +24,7 @@ type FormProps = {
 };
 
 function isValidEmail(email: string) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  return emailRegex.test(email);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 export function Form({
@@ -32,9 +33,12 @@ export function Form({
   submitText = "Enviar",
   loading = false,
 }: FormProps) {
+  const colors = getColors(useColorScheme());
+
   const [visiblePasswords, setVisiblePasswords] = useState<
     Record<string, boolean>
   >({});
+  const [focused, setFocused] = useState<number | null>(null);
 
   function togglePasswordVisibility(index: number) {
     setVisiblePasswords((current) => ({
@@ -57,16 +61,14 @@ export function Form({
     }
 
     const password = fields.find((field) => field.type === "password");
+    const confirm = fields.find((field) => field.type === "confirmPassword");
 
-    const confirmPassword = fields.find(
-      (field) => field.type === "confirmPassword",
-    );
+    if (password && password.value.length < 6) {
+      Alert.alert("Senha curta", "Use pelo menos 6 caracteres.");
+      return false;
+    }
 
-    if (
-      password &&
-      confirmPassword &&
-      password.value !== confirmPassword.value
-    ) {
+    if (password && confirm && password.value !== confirm.value) {
       Alert.alert(
         "Senhas diferentes",
         "A senha e a confirmação de senha precisam ser iguais.",
@@ -78,11 +80,9 @@ export function Form({
   }
 
   function handleSubmit() {
-    if (!validateFields()) {
-      return;
+    if (validateFields()) {
+      onSubmit();
     }
-
-    onSubmit();
   }
 
   return (
@@ -90,27 +90,42 @@ export function Form({
       {fields.map((field, index) => {
         const isPassword =
           field.type === "password" || field.type === "confirmPassword";
-
         const passwordVisible = visiblePasswords[index];
 
         return (
           <View key={`${field.label}-${index}`} style={styles.field}>
             <ThemedText style={styles.label}>{field.label}</ThemedText>
 
-            <View style={styles.inputContainer}>
+            <View>
               <TextInput
                 editable={!loading}
                 value={field.value}
                 onChangeText={field.onChangeText}
-                style={[styles.input, isPassword && styles.passwordInput]}
+                onFocus={() => setFocused(index)}
+                onBlur={() => setFocused(null)}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.input,
+                    color: colors.text,
+                    borderColor: focused === index ? colors.tint : colors.border,
+                  },
+                  isPassword && styles.passwordInput,
+                ]}
                 placeholder={field.placeholder}
-                placeholderTextColor="grey"
-                autoCapitalize={field.type === "email" ? "none" : "words"}
+                placeholderTextColor={colors.muted}
+                autoCapitalize={
+                  field.type === "text" ? "words" : "none"
+                }
+                autoCorrect={false}
                 keyboardType={
                   field.type === "email" ? "email-address" : "default"
                 }
                 secureTextEntry={isPassword && !passwordVisible}
-                returnKeyType="done"
+                returnKeyType={index === fields.length - 1 ? "done" : "next"}
+                onSubmitEditing={
+                  index === fields.length - 1 ? handleSubmit : undefined
+                }
               />
 
               {isPassword && (
@@ -130,79 +145,31 @@ export function Form({
         );
       })}
 
-      <Pressable
-        style={[styles.button, loading && styles.buttonDisabled]}
-        onPress={handleSubmit}
-        disabled={loading}
-      >
-        <ThemedText style={styles.buttonText}>
-          {loading ? "Enviando..." : submitText}
-        </ThemedText>
-      </Pressable>
+      <Button title={submitText} onPress={handleSubmit} loading={loading} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 16,
-  },
-
-  field: {
-    gap: 6,
-  },
-
-  label: {
-    fontWeight: "600",
-  },
-
-  inputContainer: {
-    position: "relative",
-  },
-
+  container: { gap: 16 },
+  field: { gap: 6 },
+  label: { fontWeight: "600" },
   input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: "#999",
-    borderRadius: 10,
+    height: 52,
+    borderWidth: 1.5,
+    borderRadius: Radius.medium,
     paddingHorizontal: 16,
-    backgroundColor: "#fff",
-    color: "#000",
+    fontSize: 16,
   },
-
-  passwordInput: {
-    paddingRight: 55,
-  },
-
+  passwordInput: { paddingRight: 55 },
   eyeButton: {
     position: "absolute",
     right: 0,
     top: 0,
-    height: 50,
-    width: 50,
+    height: 52,
+    width: 52,
     alignItems: "center",
     justifyContent: "center",
   },
-
-  eyeText: {
-    fontSize: 20,
-  },
-
-  button: {
-    height: 50,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#2E7D32",
-    marginTop: 8,
-  },
-
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
+  eyeText: { fontSize: 20 },
 });

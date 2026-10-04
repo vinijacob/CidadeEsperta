@@ -1,239 +1,128 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 
+import { Button } from "@/components/Button";
+import { ProgressBar } from "@/components/ProgressBar";
 import { ReturnButton } from "@/components/ReturnButton";
+import { Screen } from "@/components/Screen";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { Colors } from "@/constants/theme";
+import { getColors, Radius } from "@/constants/theme";
 import { lessons } from "@/data/lessons";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { completeTopic } from "@/services/progressService";
 
 export default function LessonScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-
-  const colors = colorScheme === "dark" ? Colors.dark : Colors.light;
+  const colors = getColors(useColorScheme());
 
   const { id } = useLocalSearchParams<{ id: string }>();
-
   const lesson = lessons.find((item) => item.id === id);
 
-  const [currentTopicIndex, setCurrentTopicIndex] = useState(0);
+  const [index, setIndex] = useState(0);
 
   if (!lesson) {
     return (
-      <ThemedView style={styles.container}>
+      <Screen>
+        <ReturnButton />
         <ThemedText type="title">Aula não encontrada</ThemedText>
-
-        <Pressable
-          style={[
-            styles.button,
-            {
-              backgroundColor: colors.tint,
-            },
-          ]}
-          onPress={() => router.back()}
-        >
-          <ThemedText
-            style={styles.buttonText}
-            lightColor="#FFFFFF"
-            darkColor="#FFFFFF"
-          >
-            Voltar
-          </ThemedText>
-        </Pressable>
-      </ThemedView>
+      </Screen>
     );
   }
 
-  const currentTopic = lesson.topics[currentTopicIndex];
+  const topic = lesson.topics[index];
+  const isLast = index === lesson.topics.length - 1;
 
-  const isLastTopic = currentTopicIndex === lesson.topics.length - 1;
+  async function handleNext() {
+    await completeTopic(topic.id);
 
-  function handleNext() {
-    if (!isLastTopic) {
-      setCurrentTopicIndex((currentIndex) => currentIndex + 1);
-
-      return;
-    }
-
-    router.push(`/exercises/${lesson?.id}`);
-  }
-
-  function handleBack() {
-    if (currentTopicIndex !== 0) {
-      setCurrentTopicIndex((currentIndex) => currentIndex - 1);
+    if (isLast) {
+      router.push(`/exercises/${lesson!.id}`);
+    } else {
+      setIndex(index + 1);
     }
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <ReturnButton />
-        <ThemedText style={styles.lessonTitle}>{lesson.title}</ThemedText>
+    <Screen>
+      <ReturnButton />
 
-        <ThemedText style={styles.progress}>
-          Lição {currentTopicIndex + 1} de {lesson.topics.length}
+      <ThemedText style={styles.lessonTitle}>{lesson.title}</ThemedText>
+
+      <ThemedView style={styles.progressRow}>
+        <ThemedText type="small" style={{ color: colors.muted }}>
+          Lição {index + 1} de {lesson.topics.length}
+        </ThemedText>
+        <ProgressBar progress={(index + 1) / lesson.topics.length} />
+      </ThemedView>
+
+      <ThemedView
+        type="backgroundElement"
+        style={[styles.card, { borderColor: colors.border }]}
+      >
+        <ThemedText type="subtitle" style={styles.topicTitle}>
+          {topic.title}
         </ThemedText>
 
-        <ThemedView
-          type="backgroundElement"
-          style={[
-            styles.card,
-            {
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <ThemedText type="subtitle" style={styles.topicTitle}>
-            {currentTopic.title}
-          </ThemedText>
+        <ThemedText style={styles.topicContent}>{topic.content}</ThemedText>
 
-          <ThemedText style={styles.topicContent}>
-            {currentTopic.content}
-          </ThemedText>
-
-          {currentTopic.pythonExample && (
-            <ThemedView
-              style={[
-                styles.codeContainer,
-                {
-                  backgroundColor:
-                    colorScheme === "dark" ? "#0D1117" : "#222222",
-                },
-              ]}
-            >
-              <ThemedText
-                style={styles.codeTitle}
-                lightColor="#FFFFFF"
-                darkColor="#FFFFFF"
-              >
-                Exemplo em Python 🐍
-              </ThemedText>
-
-              <ThemedText
-                style={styles.code}
-                lightColor="#FFFFFF"
-                darkColor="#FFFFFF"
-              >
-                {currentTopic.pythonExample}
-              </ThemedText>
-            </ThemedView>
-          )}
-        </ThemedView>
-
-        <ThemedView style={styles.actionButtons}>
-          <Pressable
-            style={[
-              styles.button,
-              {
-                backgroundColor: "#7A0A17",
-              },
-            ]}
-            onPress={handleBack}
-          >
-            <ThemedText style={styles.buttonText}>Lição Anterior</ThemedText>
-          </Pressable>
-          <Pressable
-            style={[
-              styles.button,
-              {
-                backgroundColor: colors.tint,
-              },
-            ]}
-            onPress={handleNext}
+        {topic.pythonExample && (
+          <ThemedView
+            style={[styles.code, { backgroundColor: "#0D1117" }]}
           >
             <ThemedText
-              style={styles.buttonText}
-              lightColor="#FFFFFF"
-              darkColor="#FFFFFF"
+              type="small"
+              style={styles.codeTitle}
+              lightColor="#8B949E"
+              darkColor="#8B949E"
             >
-              {isLastTopic ? "Ir para os exercícios" : "Próxima lição"}
+              🐍 EXEMPLO EM PYTHON
             </ThemedText>
-          </Pressable>
-        </ThemedView>
-      </ScrollView>
-    </ThemedView>
+
+            <ThemedText
+              type="code"
+              lightColor="#E6EDF3"
+              darkColor="#E6EDF3"
+              style={styles.codeText}
+            >
+              {topic.pythonExample}
+            </ThemedText>
+          </ThemedView>
+        )}
+      </ThemedView>
+
+      <ThemedView style={styles.actions}>
+        <Button
+          flex
+          variant="secondary"
+          title="◀ Anterior"
+          disabled={index === 0}
+          onPress={() => setIndex(index - 1)}
+        />
+        <Button
+          flex
+          title={isLast ? "Exercícios ▶" : "Próxima ▶"}
+          onPress={handleNext}
+        />
+      </ThemedView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
-  content: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 20,
-    gap: 16,
-  },
-
-  lessonTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-
-  progress: {
-    opacity: 0.7,
-  },
-
+  lessonTitle: { fontSize: 24, fontWeight: "bold", lineHeight: 30 },
+  progressRow: { gap: 8, backgroundColor: "transparent" },
   card: {
-    borderRadius: 12,
+    borderRadius: Radius.large,
     padding: 20,
     gap: 16,
     borderWidth: 1,
   },
-
-  topicTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-  },
-
-  topicContent: {
-    fontSize: 16,
-    lineHeight: 25,
-  },
-
-  codeContainer: {
-    borderRadius: 10,
-    padding: 16,
-    gap: 10,
-  },
-
-  codeTitle: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
-  },
-
-  code: {
-    color: "#FFFFFF",
-    fontFamily: "monospace",
-    lineHeight: 22,
-  },
-
-  actionButtons: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    gap: 10,
-  },
-
-  button: {
-    height: 52,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
-    padding: 15,
-  },
-
-  buttonText: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
-  },
+  topicTitle: { fontSize: 22 },
+  topicContent: { fontSize: 16, lineHeight: 26 },
+  code: { borderRadius: Radius.small, padding: 16, gap: 10 },
+  codeTitle: { fontWeight: "bold", letterSpacing: 1 },
+  codeText: { lineHeight: 22 },
+  actions: { flexDirection: "row", gap: 12, backgroundColor: "transparent" },
 });

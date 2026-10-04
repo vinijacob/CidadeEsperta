@@ -1,39 +1,39 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 
-import { ThemedView } from "./themed-view";
+import { getColors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 interface ProgressBarProps {
   progress: number;
+  height?: number;
 }
 
-export function ProgressBar({ progress }: ProgressBarProps) {
+export function ProgressBar({ progress, height = 12 }: ProgressBarProps) {
+  const colors = getColors(useColorScheme());
+
   const safeProgress = Math.min(Math.max(progress, 0), 1);
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedView
-        style={[
-          styles.progress,
-          {
-            width: `${safeProgress * 100}%`,
-          },
-        ]}
+    <View
+      style={[
+        styles.container,
+        { height, backgroundColor: colors.track, borderRadius: height },
+      ]}
+    >
+      <View
+        style={{
+          width: `${safeProgress * 100}%`,
+          height: "100%",
+          borderRadius: height,
+          backgroundColor: colors.tint,
+        }}
       />
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    height: 10,
-    borderRadius: 10,
     overflow: "hidden",
-    backgroundColor: "#DDD",
-  },
-
-  progress: {
-    height: "100%",
-    borderRadius: 10,
-    backgroundColor: "#2E7D32",
   },
 });

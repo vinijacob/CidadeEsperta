@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export const STORAGE_KEYS = {
   STUDENT: "@cidade_esperta_student",
   PROGRESS: "@cidade_esperta_progress",
+  SESSION: "@cidade_esperta_session",
 };
 
 export async function saveData<T>(key: string, data: T): Promise<void> {

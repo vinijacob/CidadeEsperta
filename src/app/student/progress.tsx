@@ -1,206 +1,133 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 
 import { ProgressBar } from "@/components/ProgressBar";
 import { ReturnButton } from "@/components/ReturnButton";
+import { Screen } from "@/components/Screen";
+import { StatTile } from "@/components/StatTile";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { Colors } from "@/constants/theme";
+import { getColors, Radius } from "@/constants/theme";
 import { lessons } from "@/data/lessons";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Student } from "@/models/Student";
+import { getLevel } from "@/rules/lessonRules";
 import { getCurrentStudent } from "@/services/authService";
+import { getLessonProgress } from "@/services/progressService";
 
 export default function ProgressScreen() {
-  const colorScheme = useColorScheme();
-
-  const colors = colorScheme === "dark" ? Colors.dark : Colors.light;
+  const colors = getColors(useColorScheme());
 
   const [student, setStudent] = useState<Student | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  async function loadProgress() {
-    try {
-      const currentStudent = await getCurrentStudent();
-
-      setStudent(currentStudent);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   useFocusEffect(
     useCallback(() => {
-      loadProgress();
+      getCurrentStudent().then(setStudent);
     }, []),
   );
 
-  if (loading || !student) {
+  if (!student) {
     return (
-      <ThemedView style={styles.loadingContainer}>
+      <ThemedView style={styles.loading}>
         <ThemedText>Carregando progresso...</ThemedText>
       </ThemedView>
     );
   }
 
-  const totalLessons = lessons.length;
-
-  const completedLessons = student.completedLessons.length;
-
-  const totalTopics = lessons.reduce(
-    (total, lesson) => total + lesson.topics.length,
-    0,
-  );
-
-  const totalExercises = lessons.reduce(
-    (total, lesson) => total + lesson.exercises.length,
-    0,
-  );
-
-  const completedExercises = student.completedExercises.length;
-
-  const lessonProgress =
-    totalLessons === 0 ? 0 : completedLessons / totalLessons;
-
-  const exerciseProgress =
-    totalExercises === 0 ? 0 : completedExercises / totalExercises;
+  const totalTopics = lessons.reduce((sum, l) => sum + l.topics.length, 0);
+  const totalExercises = lessons.reduce((sum, l) => sum + l.exercises.length, 0);
+  const level = getLevel(student.score);
 
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+    <Screen>
+      <ReturnButton />
+      <ThemedText type="title">Meu progresso</ThemedText>
+      <ThemedText style={{ color: colors.muted }}>
+        Continue aprendendo, {student.name}!
+      </ThemedText>
+
+      <ThemedView style={styles.row}>
+        <StatTile icon="🔥" value={student.streak ?? 0} label="Sequência" />
+        <StatTile icon="⚡" value={student.bestStreak ?? 0} label="Recorde" />
+        <StatTile icon="⭐" value={level.level} label="Nível" />
+      </ThemedView>
+
+      <ThemedView
+        style={[
+          styles.card,
+          { backgroundColor: colors.warningSoft, borderColor: colors.warning },
+        ]}
       >
-        <ReturnButton />
-        <ThemedText type="title">Meu progresso</ThemedText>
-
-        <ThemedText style={styles.greeting}>
-          Continue aprendendo, {student.name}!
+        <ThemedText type="subtitle" lightColor={colors.warning} darkColor={colors.warning}>
+          Pontuação 🏆
         </ThemedText>
+        <ThemedText style={styles.score} lightColor={colors.warning} darkColor={colors.warning}>
+          {student.score} pontos
+        </ThemedText>
+      </ThemedView>
 
+      {[
+        { title: "Aulas", done: student.completedLessons.length, total: lessons.length },
+        { title: "Lições", done: student.completedTopics.length, total: totalTopics },
+        { title: "Exercícios", done: student.completedExercises.length, total: totalExercises },
+      ].map((item) => (
         <ThemedView
+          key={item.title}
           type="backgroundElement"
-          style={[
-            styles.card,
-            {
-              borderColor: colors.border,
-            },
-          ]}
+          style={[styles.card, { borderColor: colors.border }]}
         >
-          <ThemedText type="subtitle">Aulas</ThemedText>
-
-          <ThemedText style={styles.number}>
-            {completedLessons} / {totalLessons}
-          </ThemedText>
-
-          <ProgressBar progress={lessonProgress} />
+          <ThemedView style={styles.cardRow}>
+            <ThemedText type="subtitle">{item.title}</ThemedText>
+            <ThemedText style={styles.number}>
+              {item.done} / {item.total}
+            </ThemedText>
+          </ThemedView>
+          <ProgressBar progress={item.total ? item.done / item.total : 0} />
         </ThemedView>
+      ))}
 
-        <ThemedView
-          type="backgroundElement"
-          style={[
-            styles.card,
-            {
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <ThemedText type="subtitle">Lições</ThemedText>
+      <ThemedText type="subtitle" style={styles.section}>
+        Por aula
+      </ThemedText>
 
-          <ThemedText style={styles.number}>
-            {student.completedTopics.length} / {totalTopics}
-          </ThemedText>
-        </ThemedView>
+      {lessons.map((lesson) => {
+        const value = student.completedLessons.includes(lesson.id)
+          ? 1
+          : getLessonProgress(student, lesson);
 
-        <ThemedView
-          type="backgroundElement"
-          style={[
-            styles.card,
-            {
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <ThemedText type="subtitle">Exercícios</ThemedText>
-
-          <ThemedText style={styles.number}>
-            {completedExercises} / {totalExercises}
-          </ThemedText>
-
-          <ProgressBar progress={exerciseProgress} />
-        </ThemedView>
-
-        <ThemedView
-          style={[
-            styles.scoreCard,
-            {
-              backgroundColor: colorScheme === "dark" ? "#332B16" : "#FFF3CD",
-
-              borderColor: colorScheme === "dark" ? "#665722" : "#F0D98C",
-            },
-          ]}
-        >
-          <ThemedText type="subtitle" lightColor="#6B5700" darkColor="#FFE082">
-            Pontuação 🏆
-          </ThemedText>
-
-          <ThemedText
-            style={styles.score}
-            lightColor="#6B5700"
-            darkColor="#FFE082"
-          >
-            {student.score} pontos
-          </ThemedText>
-        </ThemedView>
-      </ScrollView>
-    </ThemedView>
+        return (
+          <ThemedView key={lesson.id} style={styles.lessonRow}>
+            <ThemedView style={styles.cardRow}>
+              <ThemedText type="small" numberOfLines={1} style={styles.flex}>
+                {lesson.title}
+              </ThemedText>
+              <ThemedText type="small" style={{ color: colors.muted }}>
+                {Math.round(value * 100)}%
+              </ThemedText>
+            </ThemedView>
+            <ProgressBar progress={value} height={8} />
+          </ThemedView>
+        );
+      })}
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
+  loading: { flex: 1, justifyContent: "center", alignItems: "center" },
+  row: { flexDirection: "row", gap: 12, backgroundColor: "transparent" },
+  card: { padding: 18, borderRadius: Radius.medium, gap: 12, borderWidth: 1 },
+  cardRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
+    gap: 8,
+    backgroundColor: "transparent",
   },
-
-  content: {
-    gap: 16,
-    padding: 20,
-    paddingTop: 80,
-    paddingBottom: 30,
-  },
-
-  greeting: {
-    marginBottom: 8,
-  },
-
-  card: {
-    padding: 20,
-    borderRadius: 12,
-    gap: 10,
-    borderWidth: 1,
-  },
-
-  scoreCard: {
-    padding: 20,
-    borderRadius: 12,
-    gap: 10,
-    borderWidth: 1,
-  },
-
-  number: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-
-  score: {
-    fontSize: 25,
-    fontWeight: "bold",
-  },
+  flex: { flex: 1 },
+  number: { fontSize: 20, fontWeight: "bold" },
+  score: { fontSize: 26, fontWeight: "bold", lineHeight: 32 },
+  section: { marginTop: 8 },
+  lessonRow: { gap: 6, backgroundColor: "transparent" },
 });

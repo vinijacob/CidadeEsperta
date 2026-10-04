@@ -1,134 +1,84 @@
-import { Pressable, StyleSheet } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet } from "react-native";
 
-import { Colors } from "@/constants/theme";
+import { getColors, Radius } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Exercise } from "@/models/Exercise";
 import { ThemedText } from "./themed-text";
-import { ThemedView } from "./themed-view";
 
-interface ExerciseCardProps {
-  exercise: Exercise;
-  selectedAnswer: number | null;
-  answered: boolean;
-  onSelectAnswer: (answerIndex: number) => void;
+interface ButtonProps {
+  title: string;
+  onPress: () => void;
+  variant?: "primary" | "secondary" | "danger" | "ghost" | "inverse";
+  disabled?: boolean;
+  loading?: boolean;
+  flex?: boolean;
 }
 
-export function ExerciseCard({
-  exercise,
-  selectedAnswer,
-  answered,
-  onSelectAnswer,
-}: ExerciseCardProps) {
-  const colorScheme = useColorScheme();
+export function Button({
+  title,
+  onPress,
+  variant = "primary",
+  disabled = false,
+  loading = false,
+  flex = false,
+}: ButtonProps) {
+  const colors = getColors(useColorScheme());
 
-  const colors = colorScheme === "dark" ? Colors.dark : Colors.light;
-
-  const optionBackgroundColor = colorScheme === "dark" ? "#242424" : "#FFFFFF";
-
-  const feedbackBackgroundColor =
-    colorScheme === "dark" ? "#242424" : "#EEEEEE";
+  const isFilled = variant === "primary" || variant === "danger";
+  const fill = variant === "danger" ? colors.danger : colors.tint;
+  const textColor =
+    variant === "primary"
+      ? colors.background
+      : variant === "danger"
+        ? "#FFFFFF"
+        : variant === "ghost"
+          ? colors.muted
+          : variant === "inverse"
+            ? colors.success
+            : colors.tint;
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="subtitle" style={styles.question}>
-        {exercise.question}
-      </ThemedText>
-
-      <ThemedView style={styles.options}>
-        {exercise.options.map((option, index) => {
-          const isSelected = selectedAnswer === index;
-
-          const isCorrect = exercise.correctAnswer === index;
-
-          return (
-            <Pressable
-              key={index}
-              disabled={answered}
-              onPress={() => onSelectAnswer(index)}
-              style={[
-                styles.option,
-                {
-                  backgroundColor: optionBackgroundColor,
-                  borderColor: colors.border,
-                },
-                isSelected && {
-                  borderColor: colors.tint,
-                },
-                answered &&
-                  isCorrect && {
-                    borderColor: "#2E7D32",
-                    backgroundColor:
-                      colorScheme === "dark" ? "#17351A" : "#E8F5E9",
-                  },
-                answered &&
-                  isSelected &&
-                  !isCorrect && {
-                    borderColor: "#C62828",
-                    backgroundColor:
-                      colorScheme === "dark" ? "#351717" : "#FFEBEE",
-                  },
-              ]}
-            >
-              <ThemedText style={styles.optionText}>{option}</ThemedText>
-            </Pressable>
-          );
-        })}
-      </ThemedView>
-
-      {answered && (
-        <ThemedView
-          style={[
-            styles.feedback,
-            {
-              backgroundColor: feedbackBackgroundColor,
-              borderColor: colors.border,
-            },
-          ]}
+    <Pressable
+      onPress={onPress}
+      disabled={disabled || loading}
+      accessibilityRole="button"
+      style={({ pressed }) => [
+        styles.button,
+        flex && styles.flex,
+        isFilled && { backgroundColor: disabled ? colors.track : fill },
+        variant === "inverse" && { backgroundColor: "#FFFFFF" },
+        variant === "secondary" && {
+          borderWidth: 1.5,
+          borderColor: colors.tint,
+        },
+        (disabled || loading) && styles.disabled,
+        pressed && styles.pressed,
+      ]}
+    >
+      {loading ? (
+        <ActivityIndicator color={textColor} />
+      ) : (
+        <ThemedText
+          style={styles.text}
+          lightColor={textColor}
+          darkColor={textColor}
         >
-          <ThemedText type="subtitle">
-            {selectedAnswer === exercise.correctAnswer
-              ? "🎉 Muito bem!"
-              : "😅 Quase!"}
-          </ThemedText>
-
-          <ThemedText>{exercise.explanation}</ThemedText>
-        </ThemedView>
+          {title}
+        </ThemedText>
       )}
-    </ThemedView>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 20,
-  },
-
-  question: {
-    fontSize: 20,
-    lineHeight: 28,
-  },
-
-  options: {
-    gap: 12,
-    backgroundColor: "transparent",
-  },
-
-  option: {
-    minHeight: 52,
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 14,
+  button: {
+    minHeight: 54,
+    borderRadius: Radius.medium,
+    paddingHorizontal: 18,
+    alignItems: "center",
     justifyContent: "center",
   },
-
-  optionText: {
-    fontSize: 16,
-  },
-
-  feedback: {
-    gap: 8,
-    padding: 16,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
+  flex: { flex: 1 },
+  disabled: { opacity: 0.55 },
+  pressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
+  text: { fontWeight: "bold", fontSize: 16, textAlign: "center" },
 });

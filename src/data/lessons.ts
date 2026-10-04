@@ -80,6 +80,18 @@ export const lessons: Lesson[] = [
         correctAnswer: 2,
         explanation: "O comando print() mostra uma informação na tela.",
       },
+      {
+        id: "exercise-1-4",
+        type: "order",
+        question: "Monte o programa que mostra três passos, na ordem certa:",
+        solution: [
+          "print(\"Passo 1\")",
+          "print(\"Passo 2\")",
+          "print(\"Passo 3\")",
+        ],
+        explanation:
+          "Python executa os comandos de cima para baixo, na ordem em que aparecem.",
+      },
     ],
   },
 
@@ -157,6 +169,17 @@ export const lessons: Lesson[] = [
         explanation:
           "O número 30 pode representar uma temperatura armazenada em uma variável.",
       },
+      {
+        id: "exercise-2-4",
+        type: "order",
+        question: "Monte o código que guarda um nome e depois o mostra:",
+        solution: [
+          "nome = \"Ana\"",
+          "print(nome)",
+        ],
+        explanation:
+          "Primeiro criamos a variável e só depois podemos usá-la.",
+      },
     ],
   },
 
@@ -232,6 +255,18 @@ export const lessons: Lesson[] = [
         correctAnswer: 0,
         explanation:
           "Quando o semáforo está vermelho, a regra da cidade determina que o carro deve parar.",
+      },
+      {
+        id: "exercise-3-4",
+        type: "order",
+        question: "Monte a condição do semáforo:",
+        solution: [
+          "semaforo = \"vermelho\"",
+          "if semaforo == \"vermelho\":",
+          "    print(\"Pare!\")",
+        ],
+        explanation:
+          "A variável vem primeiro; o if testa o valor e o comando recuado roda se for verdadeiro.",
       },
     ],
   },
@@ -312,6 +347,17 @@ export const lessons: Lesson[] = [
         ],
         correctAnswer: 0,
         explanation: "O range(3) faz o loop executar três vezes.",
+      },
+      {
+        id: "exercise-4-4",
+        type: "order",
+        question: "Monte um laço que repete 3 vezes:",
+        solution: [
+          "for i in range(3):",
+          "    print(\"Olá!\")",
+        ],
+        explanation:
+          "O for define quantas vezes repetir e o comando recuado é o que se repete.",
       },
     ],
   },
@@ -476,6 +522,18 @@ export const lessons: Lesson[] = [
         correctAnswer: 0,
         explanation:
           "Parâmetros são informações que uma função pode receber para trabalhar com diferentes valores.",
+      },
+      {
+        id: "exercise-6-4",
+        type: "order",
+        question: "Monte uma função e depois chame-a:",
+        solution: [
+          "def saudacao():",
+          "    print(\"Bem-vindo!\")",
+          "saudacao()",
+        ],
+        explanation:
+          "Primeiro definimos a função com def; depois a chamamos pelo nome.",
       },
     ],
   },

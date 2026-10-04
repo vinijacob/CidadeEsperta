@@ -1,15 +1,16 @@
-import { Pressable, StyleSheet } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
-import { Colors } from "@/constants/theme";
+import { getColors, Radius } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Lesson } from "@/models/Lesson";
+import { ProgressBar } from "./ProgressBar";
 import { ThemedText } from "./themed-text";
-import { ThemedView } from "./themed-view";
 
 interface LessonCardProps {
   lesson: Lesson;
   unlocked: boolean;
   completed: boolean;
+  progress?: number;
   onPress: () => void;
 }
 
@@ -17,11 +18,12 @@ export function LessonCard({
   lesson,
   unlocked,
   completed,
+  progress = 0,
   onPress,
 }: LessonCardProps) {
-  const colorScheme = useColorScheme();
+  const colors = getColors(useColorScheme());
 
-  const colors = colorScheme === "dark" ? Colors.dark : Colors.light;
+  const number = lesson.id.replace("lesson-", "");
 
   return (
     <Pressable
@@ -31,109 +33,86 @@ export function LessonCard({
         styles.card,
         {
           backgroundColor: colors.card,
-          borderColor: unlocked ? colors.tint : colors.border,
+          borderColor: completed ? colors.success : unlocked ? colors.tint : colors.border,
         },
-        !unlocked && styles.lockedCard,
-        pressed && unlocked && styles.pressedCard,
+        !unlocked && styles.locked,
+        pressed && styles.pressed,
       ]}
     >
-      <ThemedView
-        style={styles.content}
-        type="backgroundElement"
-        lightColor={Colors.light.card}
-        darkColor={Colors.dark.card}
+      <View
+        style={[
+          styles.badge,
+          {
+            backgroundColor: completed
+              ? colors.success
+              : unlocked
+                ? colors.tintSoft
+                : colors.track,
+          },
+        ]}
       >
-        <ThemedView
-          style={styles.textContainer}
-          type="backgroundElement"
-          lightColor={Colors.light.card}
-          darkColor={Colors.dark.card}
+        <ThemedText
+          style={styles.badgeText}
+          lightColor={completed ? "#FFFFFF" : colors.text}
+          darkColor={completed ? colors.background : colors.text}
         >
-          <ThemedText type="subtitle">
-            {completed ? "✅" : unlocked ? "🔓" : "🔒"} {lesson.title}
+          {completed ? "✓" : unlocked ? number : "🔒"}
+        </ThemedText>
+      </View>
+
+      <View style={styles.body}>
+        <ThemedText type="subtitle" style={styles.title}>
+          {lesson.title}
+        </ThemedText>
+
+        <ThemedText style={[styles.description, { color: colors.muted }]}>
+          {lesson.description}
+        </ThemedText>
+
+        <ThemedText type="small" style={{ color: colors.muted }}>
+          {lesson.topics.length} lições • {lesson.exercises.length} exercícios
+        </ThemedText>
+
+        {unlocked && !completed && progress > 0 && (
+          <ProgressBar progress={progress} height={8} />
+        )}
+
+        {completed && (
+          <ThemedText type="small" style={[styles.bold, { color: colors.success }]}>
+            Aula concluída!
           </ThemedText>
+        )}
 
-          <ThemedText style={styles.description}>
-            {lesson.description}
+        {!unlocked && (
+          <ThemedText type="small" style={{ color: colors.muted }}>
+            Complete a aula anterior para desbloquear.
           </ThemedText>
-
-          <ThemedText style={styles.info}>
-            {lesson.topics.length} lições • {lesson.exercises.length} exercícios
-          </ThemedText>
-
-          {completed && (
-            <ThemedText
-              style={[
-                styles.completedText,
-                {
-                  color: colors.tint,
-                },
-              ]}
-            >
-              Aula concluída!
-            </ThemedText>
-          )}
-
-          {!unlocked && (
-            <ThemedText
-              style={[
-                styles.lockedText,
-                {
-                  color: colors.muted,
-                },
-              ]}
-            >
-              Complete a aula anterior para desbloquear.
-            </ThemedText>
-          )}
-        </ThemedView>
-      </ThemedView>
+        )}
+      </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-  },
-
-  lockedCard: {
-    opacity: 0.5,
-  },
-
-  pressedCard: {
-    opacity: 0.7,
-  },
-
-  content: {
     flexDirection: "row",
     gap: 14,
+    borderWidth: 1.5,
+    borderRadius: Radius.medium,
+    padding: 16,
   },
-
-  textContainer: {
-    flex: 1,
-    gap: 6,
+  locked: { opacity: 0.55 },
+  pressed: { opacity: 0.75 },
+  badge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
   },
-
-  description: {
-    lineHeight: 20,
-  },
-
-  info: {
-    fontSize: 13,
-    opacity: 0.7,
-    marginTop: 4,
-  },
-
-  completedText: {
-    fontWeight: "bold",
-    marginTop: 4,
-  },
-
-  lockedText: {
-    fontSize: 13,
-    marginTop: 4,
-  },
+  badgeText: { fontWeight: "bold", fontSize: 18, lineHeight: 24 },
+  body: { flex: 1, gap: 6 },
+  title: { fontSize: 18 },
+  description: { lineHeight: 20, fontSize: 14 },
+  bold: { fontWeight: "bold" },
 });
